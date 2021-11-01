@@ -9,10 +9,13 @@ trait CRUDStore[F[_], K, V]:
   def create(k: K, v: V): F[ItemCreated[K, V] | ItemDoesNotExist[K, V]]
 
   /** Tries to update an existing value if it exists. */
-  def update(k: K, v: V): F[ItemUpdated[K, V] | ItemDoesNotExist[K, V]]
+  def update(k: K, v: V)(using Keyed[K, V]): F[CRUDUpdateResponse[K, V] | ItemDoesNotExist[K, V]]
 
   /** An 'upsert' type operation that always succeeds. */
-  def createOrUpdate(k: K, v: V): F[ItemCreated[K, V] | ItemUpdated[K, V]]
+  def createOrUpdate(
+      k: K,
+      v: V
+  )(using Keyed[K, V]): F[CRUDUpdateResponse[K, V] | ItemCreated[K, V]]
 
   /** Deletes a given key if it exists. */
   def delete(k: K): F[ItemDeleted[K, V] | ItemDoesNotExist[K, V]]
@@ -29,20 +32,35 @@ object CRUDStore:
           case None    => (map + (k -> v)) -> ItemCreated(k, v)
         }
       }
-      def update(k: K, v: V): F[ItemUpdated[K, V] | ItemDoesNotExist[K, V]] = ref.modify { map =>
-        map.get(k) match {
-          case Some(_) => (map + (k -> v)) -> ItemUpdated(k, v)
-          case None    => map -> ItemDoesNotExist(k)
+      def update(
+          k: K,
+          v: V
+      )(using
+          Keyed[K, V]
+      ): F[CRUDUpdateResponse[K, V] | ItemDoesNotExist[K, V]] =
+        ref.modify { map =>
+          map.get(k) match {
+            case Some(oldV) =>
+              val newKey = v.getKey[K]
+              if (k != v.getKey[K]) map -> CRUDUpdateResponse.ItemKeyCannotChange(k, newKey)
+              else (map + (k -> v)) -> CRUDUpdateResponse.ItemUpdated(k, v)
+            case None => map -> ItemDoesNotExist(k)
+          }
         }
-      }
-      def createOrUpdate(k: K, v: V): F[ItemCreated[K, V] | ItemUpdated[K, V]] = ref.modify { map =>
-        //false: was updated in-place. true: was created.
-        val newMap = map + (k -> v)
-        map.get(k) match {
-          case Some(_) => newMap -> ItemUpdated(k, v)
-          case None    => newMap -> ItemCreated(k, v)
+      def createOrUpdate(k: K, v: V)(using
+          Keyed[K, V]
+      ): F[CRUDUpdateResponse[K, V] | ItemCreated[K, V]] =
+        ref.modify { map =>
+          //false: was updated in-place. true: was created.
+          val newMap = map + (k -> v)
+          map.get(k) match {
+            case Some(_) =>
+              val newKey = v.getKey[K]
+              if (k != v.getKey[K]) map -> CRUDUpdateResponse.ItemKeyCannotChange(k, newKey)
+              else newMap -> CRUDUpdateResponse.ItemUpdated(k, v)
+            case None => newMap -> ItemCreated(k, v)
+          }
         }
-      }
       def delete(k: K): F[ItemDeleted[K, V] | ItemDoesNotExist[K, V]] = ref.modify { map =>
         //true: was deleted successfully. false: item does not exist and cannot be deleted
         map.get(k) match {

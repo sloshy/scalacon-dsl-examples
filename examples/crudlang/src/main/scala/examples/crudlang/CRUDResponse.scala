@@ -3,6 +3,8 @@ package examples.crudlang
 import io.circe.Encoder
 import io.circe.Json
 import io.circe.Decoder
+import org.http4s.Status
+import examples.crudlang.CRUDResponse.CRUDUpdateResponse.ItemKeyCannotChange
 
 sealed trait CRUDResponse[K, V]:
   val k: K
@@ -22,8 +24,16 @@ object CRUDResponse:
     final case class ItemUpdated[K, V](k: K, v: V) extends CRUDUpdateResponse[K, V]
     final case class ItemKeyCannotChange[K, V](k: K, newKey: K) extends CRUDUpdateResponse[K, V]
 
-  given [K, V]: Keyed[K, CRUDResponse[K, V]] = new:
+  given [K, V]: Keyed[K, CRUDResponse[K, V]] with
     def getKey(v: CRUDResponse[K, V]) = v.k
+
+  given [K, V]: StatusCodeMapping[CRUDResponse[K, V]] with
+    def getStatusCode(a: CRUDResponse[K, V]): Status =
+      a match
+        case ItemAlreadyExists(_)      => Status.BadRequest
+        case ItemDoesNotExist(_)       => Status.NotFound
+        case ItemKeyCannotChange(_, _) => Status.BadRequest
+        case _                         => Status.Ok
 
   given [K: Encoder, V: Encoder]: Encoder[CRUDResponse[K, V]] = Encoder.instance {
     case ItemCreated(k, v) =>

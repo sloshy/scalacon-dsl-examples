@@ -13,19 +13,26 @@ import io.circe.Decoder
 import org.http4s._
 import org.http4s.implicits._
 
-type RequestHandler[F[_], Req, Res] = Kleisli[F, Req, Res]
+opaque type RequestHandler[F[_], Req, Res] = Kleisli[F, Req, Res]
 
 extension [F[_]: Concurrent, Req: Decoder, Res: Encoder](rh: RequestHandler[F, Req, Res])
-  def toHttpRoutes: HttpRoutes[F] =
+  /** A very simplified and naive http route conversion for our request handler. To handle err
+    */
+  def toHttpRoutes(using s: StatusCodeMapping[Res]): HttpRoutes[F] =
     val dsl = org.http4s.dsl.Http4sDsl[F]
     import dsl._
 
     //Heavily over-simplified, but you get the idea
     HttpRoutes.of[F] { case req @ POST -> Root / "crud" =>
       req.decode[Req] { req =>
-        rh(req).flatMap(res => Ok(Encoder[Res].apply(res)))
+        rh(req).map { res =>
+          val status = s.getStatusCode(res)
+          Response[F](status).withEntity(Encoder[Res].apply(res))
+        }
       }
     }
+
+  def handleRequest(req: Req) = rh.run(req)
 
 object RequestHandler:
   /** Just an alias for `Kleisli.apply` to be more domain-friendly. */

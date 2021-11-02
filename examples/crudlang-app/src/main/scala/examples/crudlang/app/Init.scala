@@ -14,13 +14,8 @@ object Init:
     val secondMovie = Movie("Ghost in the Shell", 4980, Year.of(1995))
     val thirdMovie = Movie("Birdman", 7200, Year.of(2014))
 
-    store.create(firstMovie.getKey, firstMovie)
+    val allOperations = store.create(firstMovie.getKey, firstMovie)
       *> store.create(secondMovie.getKey, secondMovie)
-      *> store.create(thirdMovie.getKey, thirdMovie).void
+      *> store.create(thirdMovie.getKey, thirdMovie)
 
-//Can also do:
-// List(
-//   firstMovie,
-//   secondMovie,
-//   thirdMovie
-// ).traverse_ { m => store.create(m.getKey, m) }
+    allOperations.void

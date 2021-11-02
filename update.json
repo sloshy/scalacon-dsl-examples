@@ -1,0 +1,9 @@
+{
+  "type": "Update",
+  "key": "dune-2021",
+  "payload": {
+    "name": "Dune",
+    "runtimeSeconds": 9300,
+    "releaseYear": "2021"
+  }
+}

@@ -2,7 +2,7 @@ package examples.calculator
 
 import munit.FunSuite
 
-class CalculationSpec extends FunSuite:
+class ADTSpec extends FunSuite:
   test("CalculationADT compiler") {
     val program = List(
       CalculationADT.Add(5),

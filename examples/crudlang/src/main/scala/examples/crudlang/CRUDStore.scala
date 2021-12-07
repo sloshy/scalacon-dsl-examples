@@ -40,7 +40,7 @@ object CRUDStore:
       ): F[CRUDUpdateResponse[K, V] | ItemDoesNotExist[K, V]] =
         ref.modify { map =>
           map.get(k) match {
-            case Some(oldV) =>
+            case Some(_) =>
               val newKey = v.getKey[K]
               if (k != v.getKey[K]) map -> CRUDUpdateResponse.ItemKeyCannotChange(k, newKey)
               else (map + (k -> v)) -> CRUDUpdateResponse.ItemUpdated(k, v)

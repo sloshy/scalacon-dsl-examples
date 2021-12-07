@@ -1,9 +1,6 @@
 package examples.calculator
 
-import cats.FlatMap
-import cats.syntax.all._
 import cats.data.State
-import cats.Applicative
 import cats.Monad
 
 /** A tagless-final approach at implementing a simple, linear calculator DSL */

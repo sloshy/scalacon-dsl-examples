@@ -1,8 +1,12 @@
 # Your Program Is a Language - Examples
 Demo examples given during [Your Program Is A Language](https://slides.rpeters.dev/scalacon-dsl/) at ScalaCon Fall 2021.
 
-Examples are written in Scala 3.
-Scala 2 examples will be published shortly after the talk is made public (after ScalaCon is over).
+Examples are written in Scala 3 and Scala 2.
+Scala 2 examples are found in the `examples-scala-2` folder and are identical to Scala 3 where possible except for syntax.
+Two major differences:
+
+1. Scala 3 allows us to write Union types `A | B` and this is useful for scenarios of multiple return types across arbitrary lines. This is used heavily in the `CRUDStore.scala` file for Scala 3 but this code had to be converted to `Either` in Scala 2.
+2. Scala 3 has `opaque type` modifiers for types that wrap existing types with no runtime overhead. Code using this style was converted to the much more verbose "wrapper class" style for Scala 2. You can see this in `TaglessCalculator.scala`.
 
 ## Calculator
 Found in [`examples/calculator`](examples/calculator/src)

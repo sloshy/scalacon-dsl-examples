@@ -17,6 +17,12 @@ val commonSettings = Seq(
   scalaVersion := "3.1.0"
 )
 
+val commonSettingsScala2 = Seq(
+  publish / skip := true,
+  scalaVersion := "2.13.7",
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
+)
+
 lazy val root = (project in file("."))
   .settings(
     publish / skip := true
@@ -52,3 +58,33 @@ lazy val crudLangApp = (project in file("examples/crudlang-app"))
     )
   )
   .dependsOn(crudLang)
+
+lazy val calculatorScala2 = (project in file("examples-scala-2/calculator"))
+  .settings(
+    commonSettingsScala2,
+    libraryDependencies ++= Seq(
+      cats,
+      munit
+    )
+  )
+
+lazy val crudLangScala2 = (project in file("examples-scala-2/crudlang"))
+  .settings(
+    commonSettingsScala2,
+    libraryDependencies ++= Seq(
+      catsEffect,
+      http4sCirce,
+      http4sDsl,
+      munit
+    )
+  )
+
+lazy val crudLangAppScala2 = (project in file("examples-scala-2/crudlang-app"))
+  .settings(
+    commonSettingsScala2,
+    libraryDependencies ++= Seq(
+      http4sEmberServer,
+      munit
+    )
+  )
+  .dependsOn(crudLangScala2)
